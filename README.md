@@ -65,3 +65,6 @@ Clone it with `git clone https://github.com/SamsDevForge/Parallax.git` and follo
 
 ### Version 3.1 — Live sensor recovery
 Accept partial readings, listen for both standard and absolute orientation events, keep waiting for late readings, and use RelativeOrientationSensor only if sensor permissions are already granted. The optional enable button is available for browsers requiring explicit motion authorization. Camera, microphone and geolocation remain disabled. Physical device testing is still required.
+
+### Version 3.2 — Automatic motion first
+Live orientation always attempts passive sensor access on page load, including browsers that implement requestPermission. Existing grants and late readings are accepted automatically. Only after a passive probe returns no usable data does a browser with a motion permission API offer an optional authorization button. The native permission request is never made automatically; a visitor click is required by such browsers. No readings are transmitted or persisted.

@@ -1,11 +1,25 @@
 # Parallax
 
-**Live demo: [parallax-samsdevforge.vercel.app](https://parallax-samsdevforge.vercel.app)**
+Parallax is a privacy-awareness dashboard that shows the signals available during an ordinary website visit. Explore browser and device capabilities, inspect the request metadata the server observes, and compare reports locally.
 
-A local-first privacy-awareness dashboard showing what a normal website visit reveals without asking for browser permissions. No third-party libraries, remote analytics, cookies, tracking identifiers, automatic permission prompts or persistent tracking identifiers. The optional fixed-word storage and scoped offline demo are user initiated. Optional motion permission is requested only after an explicit visitor action. Browser signals remain in page memory. The server reflects an allowlist of ordinary request metadata without application-level logging; infrastructure may still log requests.
+**[Open the live demo](https://parallax-samsdevforge.vercel.app/)** · [Run locally](#run-locally) · [Device mirror](#version-3--parallax-device-mirror) · [Interactive labs](#version-40--interactive-labs)
+
+## What you can explore
+
+- Browse browser, graphics, display, storage, and network signals alongside explanations and uncertainty.
+- Try a representative 3D device mirror with manual controls or motion on a supported phone.
+- Compare local reports or export JSON when you choose. The server reflects a limited set of ordinary request metadata and the host can retain infrastructure logs.
+- Explore interactive labs for controllers, media, storage, and offline behavior. Optional motion authorization, storage writes, and IP enrichment start from explicit controls.
 
 ## Run locally
-Install Node.js 20 or newer, then from this directory run `npm start`. Open http://localhost:3000. No npm install required. A local test shows a loopback/local IP, not your public internet IP.
+
+Use Node.js 20 or newer.
+
+```bash
+npm start
+```
+
+Open [http://localhost:3000](http://localhost:3000). The project uses built-in Node modules. A loopback visit displays local network context.
 
 ## Deploy
 The project includes a Vercel-compatible API function and configuration. Import this directory as a repository, select Other framework, use `public` as output directory and deploy. Vercel-provided IP and coarse geolocation headers are used only when running on Vercel. No external IP lookup service is contacted by default. The optional network enrichment sends the connection IP to ipapi.is only after the visitor explicitly allows it. The production deployment is live at https://parallax-samsdevforge.vercel.app and connected to the `main` branch. Vercel reports a successful build; physical device testing remains outstanding. HTTPS and browser support affect availability.

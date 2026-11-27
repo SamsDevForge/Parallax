@@ -2,13 +2,13 @@
 
 **Live demo: [parallax-samsdevforge.vercel.app](https://parallax-samsdevforge.vercel.app)**
 
-A local-first privacy-awareness dashboard showing what a normal website visit reveals without asking for browser permissions. No third-party libraries, remote analytics, cookies, tracking identifiers, persistent storage or automatic permission prompts. Optional motion permission is requested only after an explicit visitor action. Browser signals remain in page memory. The server reflects an allowlist of ordinary request metadata without application-level logging; infrastructure may still log requests.
+A local-first privacy-awareness dashboard showing what a normal website visit reveals without asking for browser permissions. No third-party libraries, remote analytics, cookies, tracking identifiers, automatic permission prompts or persistent tracking identifiers. The optional fixed-word storage and scoped offline demo are user initiated. Optional motion permission is requested only after an explicit visitor action. Browser signals remain in page memory. The server reflects an allowlist of ordinary request metadata without application-level logging; infrastructure may still log requests.
 
 ## Run locally
 Install Node.js 20 or newer, then from this directory run `npm start`. Open http://localhost:3000. No npm install required. A local test shows a loopback/local IP, not your public internet IP.
 
 ## Deploy
-The project includes a Vercel-compatible API function and configuration. Import this directory as a repository, select Other framework, use `public` as output directory and deploy. Vercel-provided IP and coarse geolocation headers are used only when running on Vercel. No external IP lookup service is contacted. The production deployment is live at https://parallax-samsdevforge.vercel.app and connected to the `main` branch. Vercel reports a successful build; physical device testing remains outstanding. HTTPS and browser support affect availability.
+The project includes a Vercel-compatible API function and configuration. Import this directory as a repository, select Other framework, use `public` as output directory and deploy. Vercel-provided IP and coarse geolocation headers are used only when running on Vercel. No external IP lookup service is contacted by default. The optional network enrichment sends the connection IP to ipapi.is only after the visitor explicitly allows it. The production deployment is live at https://parallax-samsdevforge.vercel.app and connected to the `main` branch. Vercel reports a successful build; physical device testing remains outstanding. HTTPS and browser support affect availability.
 
 ## Features and limitations
 - 100+ probes covering browser, network, hardware, screen, settings, graphics/media, storage/performance and HTTP headers.
@@ -71,3 +71,8 @@ Accept partial readings, listen for both standard and absolute orientation event
 
 ### Version 3.2 — Automatic motion first
 Live orientation always attempts passive sensor access on page load, including browsers that implement requestPermission. Existing grants and late readings are accepted automatically. Only after a passive probe returns no usable data does a browser with a motion permission API offer an optional authorization button. The native permission request is never made automatically; a visitor click is required by such browsers. No readings are transmitted or persisted.
+
+## Version 4.0 — Interactive labs
+Physical motion and environment, illustrative exploded anatomy and desktop/laptop profile, controller mirror, touch contact, keyboard-layout check, approximate IP map, optional ipapi.is lookup, bounded same-origin network tests, live event timeline, local report comparison (VPN/incognito/browser), canvas/audio samples, fixed-word storage, cross-tab pulse, opt-in pad-only replay, blocking check, bounded CPU/GPU/RAM and display/media tests, local toy classifier, scoped offline demo and evidence-based privacy defences. No device retail-price feature. Device anatomy is representative; model catalogue coverage remains limited. No stable fingerprint, key contents, full-page replay or personal identity profiling. Optional network enrichment is quota/provider dependent; browser sensor and gamepad support varies. Offline cache can be removed. All new motion data, pad replay and comparison samples remain client-side; comparison files are user-controlled. 
+
+References: https://vercel.com/docs/headers/request-headers ; https://ipapi.is/developers.html ; https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API ; https://developer.mozilla.org/en-US/docs/Web/API/DeviceMotionEvent/requestPermission_static .

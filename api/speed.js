@@ -1,0 +1,1 @@
+module.exports=(req,res)=>{res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','application/octet-stream');if(req.method!=='GET'){res.statusCode=405;return res.end();}res.end(require('node:crypto').randomBytes(131072));};

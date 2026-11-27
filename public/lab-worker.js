@@ -1,0 +1,1 @@
+self.onmessage=()=>{const t=performance.now();let n=0,x=1;while(performance.now()-t<180&&n<5000000){x=Math.sin(x+n)*Math.cos(x-n);n++;}self.postMessage({iterations:n,ms:performance.now()-t});self.close();};

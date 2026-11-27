@@ -10,6 +10,8 @@ function report(req, trustedProxy = false) {
     city: trustedProxy ? decode(val('x-vercel-ip-city')) : null,
     postalCode: trustedProxy ? val('x-vercel-ip-postal-code') : null,
     ipTimezone: trustedProxy ? val('x-vercel-ip-timezone') : null,
+    latitude: trustedProxy ? val('x-vercel-ip-latitude') : null,
+    longitude: trustedProxy ? val('x-vercel-ip-longitude') : null,
     headers: Object.fromEntries(['user-agent','accept-language','accept','accept-encoding','sec-ch-ua','sec-ch-ua-mobile','sec-ch-ua-platform','sec-ch-ua-platform-version','sec-ch-ua-arch','sec-ch-ua-bitness','sec-ch-ua-model','sec-fetch-site','sec-fetch-mode','sec-fetch-dest','dnt','sec-gpc','priority'].map(k=>[k,val(k)])),
     protocol: req.httpVersion || null, tls: req.socket?.encrypted ? req.socket.getProtocol?.() || 'TLS' : (trustedProxy ? val('x-forwarded-proto') : null), serverTime: new Date().toISOString() };
 }

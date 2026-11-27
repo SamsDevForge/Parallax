@@ -1,0 +1,14 @@
+{
+  "source": "Local starter device catalogue",
+  "models": {
+    "cph2717": [
+      "OnePlus Nord CE5"
+    ],
+    "cph2719": [
+      "OnePlus Nord CE5"
+    ],
+    "oriole": [
+      "Google Pixel 6"
+    ]
+  }
+}

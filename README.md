@@ -1,5 +1,5 @@
 # Parallax
-A local-first privacy-awareness dashboard showing what a normal website visit reveals without asking for browser permissions. No third-party libraries, remote analytics, cookies, tracking identifiers, persistent storage or permission prompts. Browser signals remain in page memory. The server reflects an allowlist of ordinary request metadata without application-level logging; infrastructure may still log requests.
+A local-first privacy-awareness dashboard showing what a normal website visit reveals without asking for browser permissions. No third-party libraries, remote analytics, cookies, tracking identifiers, persistent storage or automatic permission prompts. Optional motion permission is requested only after an explicit visitor action. Browser signals remain in page memory. The server reflects an allowlist of ordinary request metadata without application-level logging; infrastructure may still log requests.
 
 ## Run locally
 Install Node.js 20 or newer, then from this directory run `npm start`. Open http://localhost:3000. No npm install required. A local test shows a loopback/local IP, not your public internet IP.
@@ -43,7 +43,7 @@ Node syntax checks and local HTTP endpoint checks passed. Chromium rendering wit
 ## Version 3 — Parallax Device Mirror
 The overview now includes a procedural, three-dimensional device shell with opposing front/rear faces, rounded thickness, side buttons, camera layout, display cutout and a representative finish. It has 20 named device/family profiles and six generic profiles, including several recent flagship families. These are original illustrative geometry, not CAD-accurate OEM assets; the model list is not exhaustive. Physical colour, case and exact device configuration are not observable. An exposed Android model or an unambiguous catalogue name selects a matching profile; otherwise brand-family heuristics select a generic shape and clearly mark it as approximate. iPhone model selection is manual because Safari generally does not reveal an exact model. The model registry is in `public/mirror.js`.
 
-On supported secure origins, the mirror listens for `deviceorientation` and applies the W3C intrinsic Z-X-Y rotation matrix, with the appropriate CSS axis conversion. The live view uses a fixed oblique camera. Alpha, beta and gamma values are displayed separately. Absolute heading is not guaranteed and the model does not estimate physical XYZ displacement. Browsers requiring explicit motion permission are skipped without requesting it. Desktop, unsupported and blocked browsers receive a labelled manual preview with sliders, drag and front/rear inspection. Motion values stay in transient memory, are not uploaded or exported, and are not saved across visits.
+On supported secure origins, the mirror listens for `deviceorientation` and applies the W3C intrinsic Z-X-Y rotation matrix, with the appropriate CSS axis conversion. The live view uses a fixed oblique camera. Alpha, beta and gamma values are displayed separately. Absolute heading is not guaranteed and the model does not estimate physical XYZ displacement. Browsers requiring explicit motion permission show an optional enable button; no request is made automatically. Desktop, unsupported and blocked browsers receive a labelled manual preview with sliders, drag and front/rear inspection. Motion values stay in transient memory, are not uploaded or exported, and are not saved across visits.
 
 Reference sources for the representative models and rotation implementation:
 - https://www.w3.org/TR/orientation-event/
@@ -55,10 +55,13 @@ Reference sources for the representative models and rotation implementation:
 - https://www.oneplus.com/global/15/specs
 
 ### Version 3 verification
-Node syntax checks passed. Chromium rendering tests using injected local assets and mocked browser/network data verified 26 model options, the manual rear view, synthetic motion events and angle updates, Nord CE5 matching, and no horizontal overflow at 390 px. No JavaScript page errors were reported in the desktop test. Normal browser navigation was blocked by the test environment. Real-phone sensor accuracy, production HTTPS permissions and all model variants remain unverified. Test on Android Chrome over HTTPS; Safari may require motion permission, which this project intentionally does not request.
+Node syntax checks passed. Chromium rendering tests using injected local assets and mocked browser/network data verified 26 model options, the manual rear view, synthetic motion events and angle updates, Nord CE5 matching, and no horizontal overflow at 390 px. No JavaScript page errors were reported in the desktop test. Normal browser navigation was blocked by the test environment. Real-phone sensor accuracy, production HTTPS permissions and all model variants remain unverified. Test on Android Chrome over HTTPS; Safari may require motion permission, which visitors can optionally grant using the enable button.
 
 ### Repository
 
 Source repository: https://github.com/SamsDevForge/Parallax
 
 Clone it with `git clone https://github.com/SamsDevForge/Parallax.git` and follow the local setup above.
+
+### Version 3.1 — Live sensor recovery
+Accept partial readings, listen for both standard and absolute orientation events, keep waiting for late readings, and use RelativeOrientationSensor only if sensor permissions are already granted. The optional enable button is available for browsers requiring explicit motion authorization. Camera, microphone and geolocation remain disabled. Physical device testing is still required.

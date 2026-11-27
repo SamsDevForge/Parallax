@@ -6,7 +6,7 @@ const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=u
 http.createServer((req,res)=>{
  res.setHeader('Cache-Control','no-store');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Content-Type-Options','nosniff');
  res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'");
- res.setHeader('Permissions-Policy','camera=(), microphone=(), geolocation=(), display-capture=(), usb=(), serial=(), bluetooth=()');
+ res.setHeader('Permissions-Policy','camera=(), microphone=(), geolocation=(), display-capture=(), usb=(), serial=(), bluetooth=(), accelerometer=(self), gyroscope=(self), magnetometer=(self)');
  const route=new URL(req.url,'http://localhost').pathname;
  if(route==='/api/visit') return api(req,res);
  if(!files[route]){res.writeHead(404);return res.end('Not found');}

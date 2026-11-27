@@ -32,7 +32,7 @@ const profiles=[
  ['generic-tablet','Generic tablet',170,245,7,'single','hole','#858b92',[]]
 ].map(([id,name,w,h,d,camera,front,color,aliases])=>({id,name,w,h,d,camera,front,color,aliases}));
 const byId=id=>profiles.find(p=>p.id===id);
-let attemptId=0,manual=false,hasSensor=false,last=null,lastAt=0,manualSelected=false,previewRear=false,drag=null,frame=0;
+let attemptId=0,manual=false,hasSensor=false,last=null,lastAt=0,manualSelected=false,previewRear=false,drag=null,frame=0,autoResume=true,permissionGranted=false,permissionBusy=false,relativeSensor=null,source='',lastEventAt=-Infinity;
 const phone=el('mirror-phone'),stage=el('mirror-stage'),select=el('mirror-select');
 const mode=el('mirror-mode'),view=el('mirror-view');
 function node(cls,parent,styles={}){const e=document.createElement('div');e.className=cls;Object.assign(e.style,styles);parent.append(e);return e;}
@@ -90,31 +90,85 @@ function matrix(alpha,beta,gamma){
  const sign=[1,-1,1],out=[];for(let j=0;j<3;j++){for(let i=0;i<3;i++)out.push(r[i][j]*sign[i]*sign[j]);out.push(0);}out.push(0,0,0,1);return out;
 }
 function pose(a,b,g,live){
- phone.style.transform=`matrix3d(${matrix(a,b,g).join(',')})`;
- for(const [key,v] of [['alpha',a],['beta',b],['gamma',g]])el('mirror-'+key).textContent=v.toFixed(1)+'°';
+ phone.style.transform=`matrix3d(${matrix(a??0,b??0,g??0).join(',')})`;
+ for(const [key,v] of [['alpha',a],['beta',b],['gamma',g]])el('mirror-'+key).textContent=Number.isFinite(v)?v.toFixed(1)+'°':'—';
  el('mirror-camera').style.transform=live?'rotateX(55deg)':'rotateX(0deg)';
 }
 function status(message,hint,reference){el('mirror-state').textContent=message;el('stage-hint').textContent=hint;el('mirror-frame').textContent=reference;}
 function manualPose(){const a=+el('manual-alpha').value,b=+el('manual-beta').value,g=+el('manual-gamma').value;pose(a,b,g,false);if(previewRear)phone.style.transform+= ' rotateY(180deg)';}
-function setManual(on){manual=on;previewRear=false;view.textContent='Inspect rear';view.disabled=!on;mode.textContent=on?'Try live sensors':'Manual preview';el('manual-angles').hidden=!on;
- if(on){status('MANUAL PREVIEW · simulated','Drag or use the sliders','Manual values are not sensor readings.');manualPose();}
- else{status('Waiting for live motion…','Tilt your phone','No reading yet.');if(last&&performance.now()-lastAt<1800)renderLive();}
-}
-function renderLive(){frame=0;if(manual||!last)return;pose(last.alpha,last.beta,last.gamma,true);status('LIVE · orientation detected','Tilt or rotate your phone',last.absolute?'Earth-referenced orientation reported by browser; accuracy varies.':'Relative orientation · heading may drift or have an arbitrary reference.');}
-function receive(e){if(![e.alpha,e.beta,e.gamma].every(Number.isFinite))return;last={alpha:e.alpha,beta:e.beta,gamma:e.gamma,absolute:e.absolute===true};lastAt=performance.now();hasSensor=true;if(!manual&&!frame)frame=requestAnimationFrame(renderLive);}
 const needsPermission=typeof window.DeviceOrientationEvent?.requestPermission==='function';
-const supported=!!window.DeviceOrientationEvent&&window.isSecureContext;
-function attempt(){const id=++attemptId;if(needsPermission||!supported){setManual(true);status(needsPermission?'Motion permission required · not requested':'Motion unavailable · manual preview','Drag or use the sliders',needsPermission?'This browser requires a permission prompt; Parallax never calls requestPermission.':'Requires a supported browser and secure context.');return;}setManual(false);setTimeout(()=>{if(id===attemptId&&!manual&&(!hasSensor||performance.now()-lastAt>1800)){setManual(true);status('No live sensor data · manual preview','Drag or use the sliders','Sensors may be absent, disabled or blocked by browser policy.');}},2500);}
+const supported=window.isSecureContext&&(!!window.DeviceOrientationEvent||!!window.RelativeOrientationSensor);
+function updateMode(){mode.textContent=manual?(needsPermission&&!permissionGranted?'Enable motion (permission)':'Try live sensors'):'Manual preview';}
+function setManual(on){manual=on;previewRear=false;view.textContent='Inspect rear';view.disabled=!on;updateMode();el('manual-angles').hidden=!on;
+ if(on){status('MANUAL PREVIEW · simulated','Drag or use the sliders','Manual values are not sensor readings.');manualPose();}
+ else{status('Waiting for live motion…','Tilt your phone','Waiting for usable sensor readings.');if(last&&performance.now()-lastAt<2000)renderLive();}
+}
+function renderLive(){frame=0;if(manual||!last)return;pose(last.alpha,last.beta,last.gamma,true);
+ const partial=[last.alpha,last.beta,last.gamma].some(v=>v===null);
+ status(partial?'LIVE · partial orientation':'LIVE · orientation detected','Tilt or rotate your phone',
+ source+' · '+(partial?'Unavailable axes shown as — and rendered at neutral; not full orientation.':last.absolute?'Earth-referenced orientation; accuracy varies.':'Relative orientation · heading may drift or have an arbitrary reference.'));
+}
+function accept(sample,label){
+ if(![sample.alpha,sample.beta,sample.gamma].some(Number.isFinite))return;
+ last=sample;source=label;lastAt=performance.now();hasSensor=true;
+ if(manual&&autoResume){setManual(false);}
+ if(!manual&&!frame)frame=requestAnimationFrame(renderLive);
+}
+function receive(e){
+ if(needsPermission&&!permissionGranted)return;
+ if(![e.alpha,e.beta,e.gamma].some(Number.isFinite))return;
+ lastEventAt=performance.now();
+ accept({alpha:Number.isFinite(e.alpha)?e.alpha:null,beta:Number.isFinite(e.beta)?e.beta:null,gamma:Number.isFinite(e.gamma)?e.gamma:null,absolute:e.absolute===true},e.type==='deviceorientationabsolute'?'Absolute orientation event':'Device orientation event');
+}
+async function startRelative(){
+ if(relativeSensor||!window.RelativeOrientationSensor||!navigator.permissions||!autoResume||document.hidden||(needsPermission&&!permissionGranted))return;
+ try{
+ const grants=await Promise.all(['accelerometer','gyroscope'].map(name=>navigator.permissions.query({name})));
+ if(!grants.every(p=>p.state==='granted')||relativeSensor||!autoResume||document.hidden)return;
+ const sensor=new window.RelativeOrientationSensor({frequency:30,referenceFrame:'device'});relativeSensor=sensor;
+ sensor.addEventListener('reading',()=>{
+ if(performance.now()-lastEventAt<2200||!sensor.quaternion)return;
+ const [x,y,z,w]=sensor.quaternion;
+ if(![x,y,z,w].every(Number.isFinite))return;
+ const r01=2*(x*y-z*w),r11=1-2*(x*x+z*z),r20=2*(x*z-y*w),r21=2*(y*z+x*w),r22=1-2*(x*x+y*y);
+ const rad=180/Math.PI,b=Math.asin(Math.max(-1,Math.min(1,r21)));
+ let a=Math.atan2(-r01,r11)*rad,g=Math.atan2(-r20,r22)*rad;
+ if(Math.abs(Math.cos(b))<1e-5){a=Math.atan2(2*(x*y+z*w),1-2*(y*y+z*z))*rad;g=0;}
+ accept({alpha:(a+360)%360,beta:b*rad,gamma:g,absolute:false},'Relative orientation sensor');
+ });
+ sensor.addEventListener('error',()=>{sensor.stop();if(relativeSensor===sensor)relativeSensor=null;});sensor.start();
+ }catch{relativeSensor=null;}
+}
+function stopRelative(){if(relativeSensor){relativeSensor.stop();relativeSensor=null;}}
+function attempt(){
+ const id=++attemptId;autoResume=true;
+ if(!supported||(needsPermission&&!permissionGranted)){setManual(true);status(needsPermission?'Motion permission required · optional':'Motion unavailable · manual preview','Drag or use the sliders',needsPermission?'No permission has been requested. Select Enable motion (permission) if you want live tracking.':'Requires a supported browser and secure context.');return;}
+ setManual(false);
+ setTimeout(()=>{if(id===attemptId&&autoResume&&!document.hidden&&(!hasSensor||performance.now()-lastAt>5000)){startRelative();if(!manual){setManual(true);status('Waiting for sensor data · preview available','Move your phone to activate live mode','Live mode resumes automatically if a usable reading arrives. Check browser motion sensor settings if none arrive.');}}},6000);
+}
+async function onMode(){
+ if(permissionBusy)return;
+ if(!manual){autoResume=false;++attemptId;stopRelative();setManual(true);return;}
+ if(needsPermission&&!permissionGranted){
+ permissionBusy=true;mode.disabled=true;
+ try{permissionGranted=(await window.DeviceOrientationEvent.requestPermission())==='granted';}
+ catch{permissionGranted=false;}
+ finally{permissionBusy=false;mode.disabled=false;}
+ if(!permissionGranted){autoResume=false;status('Motion access not granted','Drag or use the sliders','No live readings available. Allow motion access in browser settings or use manual preview.');return;}
+ }
+ attempt();
+}
 select.append(...profiles.map(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;return o;}));
 select.addEventListener('change',()=>{manualSelected=true;build(byId(select.value),'Manually selected visual model; not a detected device.');});
-mode.addEventListener('click',()=>manual?attempt():setManual(true));view.addEventListener('click',()=>{if(!manual)return;previewRear=!previewRear;view.textContent=previewRear?'Inspect front':'Inspect rear';manualPose();});
-for(const k of ['alpha','beta','gamma'])el('manual-'+k).addEventListener('input',manualPose);
-stage.addEventListener('pointerdown',e=>{if(!manual)return;drag={x:e.clientX,y:e.clientY,a:+el('manual-alpha').value,b:+el('manual-beta').value,g:+el('manual-gamma').value};stage.setPointerCapture(e.pointerId);});
+mode.addEventListener('click',onMode);view.addEventListener('click',()=>{if(!manual)return;autoResume=false;stopRelative();previewRear=!previewRear;view.textContent=previewRear?'Inspect front':'Inspect rear';manualPose();});
+for(const k of ['alpha','beta','gamma'])el('manual-'+k).addEventListener('input',()=>{autoResume=false;stopRelative();manualPose();});
+stage.addEventListener('pointerdown',e=>{if(!manual)return;autoResume=false;stopRelative();drag={x:e.clientX,y:e.clientY,a:+el('manual-alpha').value,b:+el('manual-beta').value,g:+el('manual-gamma').value};stage.setPointerCapture(e.pointerId);});
 stage.addEventListener('pointermove',e=>{if(!drag||!manual)return;el('manual-gamma').value=Math.max(-90,Math.min(90,drag.g+(e.clientX-drag.x)*.45));el('manual-beta').value=Math.max(-180,Math.min(180,drag.b+(e.clientY-drag.y)*.6));manualPose();});
 for(const e of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(e,()=>drag=null);
-const initial=choose(null,null);build(...initial);if(supported&&!needsPermission)window.addEventListener('deviceorientation',receive,{passive:true});attempt();
+const initial=choose(null,null);build(...initial);if(supported){window.addEventListener('deviceorientation',receive,{passive:true});window.addEventListener('deviceorientationabsolute',receive,{passive:true});}attempt();
 // The existing report publishes only the model hint, not raw orientation or persistent identifiers.
 function matchReport(){if(manualSelected)return;const info=typeof modelInfo==='function'?modelInfo():null;build(...choose(info?.raw,info?.name));}
 window.addEventListener('parallax:report',matchReport);matchReport();
-setInterval(()=>{if(!manual&&hasSensor&&performance.now()-lastAt>2500){status('Sensor feed paused','Move your phone','Last pose shown; no fresh reading.');}},1000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stopRelative();}else if(autoResume&&(!needsPermission||permissionGranted)){attempt();}});
+setInterval(()=>{if(document.hidden||!autoResume)return;if(!manual&&hasSensor&&performance.now()-lastAt>6000){status('Sensor feed paused','Move your phone','Last pose shown; waiting for a new reading.');startRelative();}},2000);
 })();

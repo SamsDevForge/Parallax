@@ -1,11 +1,14 @@
 # Parallax
+
+**Live demo: [parallax-samsdevforge.vercel.app](https://parallax-samsdevforge.vercel.app)**
+
 A local-first privacy-awareness dashboard showing what a normal website visit reveals without asking for browser permissions. No third-party libraries, remote analytics, cookies, tracking identifiers, persistent storage or automatic permission prompts. Optional motion permission is requested only after an explicit visitor action. Browser signals remain in page memory. The server reflects an allowlist of ordinary request metadata without application-level logging; infrastructure may still log requests.
 
 ## Run locally
 Install Node.js 20 or newer, then from this directory run `npm start`. Open http://localhost:3000. No npm install required. A local test shows a loopback/local IP, not your public internet IP.
 
 ## Deploy
-The project includes a Vercel-compatible API function and configuration. Import this directory as a repository, select Other framework, use `public` as output directory and deploy. Vercel-provided IP and coarse geolocation headers are used only when running on Vercel. No external IP lookup service is contacted. Deployment not performed or verified by the author. HTTPS and browser support affect availability.
+The project includes a Vercel-compatible API function and configuration. Import this directory as a repository, select Other framework, use `public` as output directory and deploy. Vercel-provided IP and coarse geolocation headers are used only when running on Vercel. No external IP lookup service is contacted. The production deployment is live at https://parallax-samsdevforge.vercel.app and connected to the `main` branch. Vercel reports a successful build; physical device testing remains outstanding. HTTPS and browser support affect availability.
 
 ## Features and limitations
 - 100+ probes covering browser, network, hardware, screen, settings, graphics/media, storage/performance and HTTP headers.
